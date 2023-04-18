@@ -70,8 +70,8 @@ extern "C" {
     fn __gmpz_abs(rop: mpz_ptr, op: mpz_srcptr);
     fn __gmpz_tdiv_q(q: mpz_ptr, n: mpz_srcptr, d: mpz_srcptr);
     fn __gmpz_tdiv_r(r: mpz_ptr, n: mpz_srcptr, d: mpz_srcptr);
-    fn __gmpz_tdiv_q_ui(q: mpz_ptr, n: mpz_srcptr, d: c_ulong);
-    fn __gmpz_tdiv_r_ui(r: mpz_ptr, n: mpz_srcptr, d: c_ulong);
+    fn __gmpz_tdiv_q_ui(q: mpz_ptr, n: mpz_srcptr, d: c_ulong) -> c_int;
+    fn __gmpz_tdiv_r_ui(r: mpz_ptr, n: mpz_srcptr, d: c_ulong) -> c_int;
     fn __gmpz_fdiv_r(r: mpz_ptr, n: mpz_srcptr, d: mpz_srcptr);
     fn __gmpz_fdiv_q_2exp(q: mpz_ptr, n: mpz_srcptr, b: mp_bitcnt_t);
     fn __gmpz_mod(r: mpz_ptr, n: mpz_srcptr, d: mpz_srcptr);
@@ -99,7 +99,7 @@ extern "C" {
     fn __gmpz_import(rop: mpz_ptr, count: size_t, order: c_int, size: size_t,
                      endian: c_int, nails: size_t, op: *const c_void);
     fn __gmpz_export(rop: *mut c_void, countp: *mut size_t, order: c_int, size: size_t, 
-                     endian: c_int, nails: size_t, op: mpz_srcptr);
+                     endian: c_int, nails: size_t, op: mpz_srcptr) -> *mut c_void;
     fn __gmpz_root(rop: mpz_ptr, op: mpz_srcptr, n: c_ulong) -> c_int;
     fn __gmpz_sqrt(rop: mpz_ptr, op: mpz_srcptr);
     fn __gmpz_millerrabin(n: mpz_srcptr, reps: c_int) -> c_int;
@@ -747,7 +747,7 @@ macro_rules! impl_oper {
 				unsafe {
 					div_guard!($tr, other == 0);
 					bit_guard!($num, other,
-						$fun(&mut self.mpz, &self.mpz, other as $cnum),
+                        {$fun(&mut self.mpz, &self.mpz, other as $cnum);},
 						self.$meth_assign(Mpz::from(other)))
 				}
 			}
@@ -761,7 +761,7 @@ macro_rules! impl_oper {
 			fn $meth(self, mut other: Mpz) -> Mpz {
 				unsafe {
 					bit_guard!($num, self, {
-		            	$fun(&mut other.mpz, self as $cnum, &other.mpz);
+		                $fun(&mut other.mpz, self as $cnum, &other.mpz);
 		            	other
 		        	}, Mpz::from(self).$meth(other))
 				}
